@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity ^0.8.20;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
 
 contract Ballot {
     // VARIABLES
@@ -29,4 +29,71 @@ contract Ballot {
         Ended
     }
     State public state;
+
+    // MODIFIERS
+    modifier condition(bool _condition) {
+        require(_condition);
+        _;
+    }
+    modifier onlyOfficial() {
+        require(msg.sender == ballotOfficialAddress);
+        _;
+    }
+    modifier inState(State _state) {
+        require(state == _state);
+        _;
+    }
+
+    // FUNCTIONS
+    constructor(
+        string memory _ballotOfficialName,
+        string memory _proposal
+    ) public {
+        ballotOfficialAddress = msg.sender;
+        ballotOfficialName = _ballotOfficialName;
+        proposal = _proposal;
+        state = State.Created;
+    }
+
+    function addVoter(
+        address _voterAddress,
+        string memory _voterName
+    ) public inState(State.Created) onlyOfficial {
+        voter memory v;
+        v.voterName = _voterName;
+        v.voted = false;
+        voterRegister[_voterAddress] = v;
+        totalVoter++;
+    }
+
+    function startVote() public inState(State.Created) onlyOfficial {
+        state = State.Voting;
+    }
+
+    function doVote(
+        bool _choice
+    ) public inState(State.Voting) returns (bool voted) {
+        bool isFound = false;
+        if (
+            bytes(votingRegister[msg.sender].voterName).length != 0 &&
+            voterRegister[msg.sender].voted == false
+        ) {
+            votingRegister[msg.sender].voted = true;
+            vote memory v;
+            v.voterAddress = msg.sender;
+            v.choice = _choice;
+            if (_choice) {
+                countResult++;
+            }
+            votes[totalVote] = v;
+            totalVoter++;
+            isFound = true;
+        }
+        return isFound;
+    }
+
+    function endVote() public inState(State.Voting) onlyOfficial {
+        state = State.Ended;
+        finalResult = countResult;
+    }
 }
