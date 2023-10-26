@@ -48,7 +48,7 @@ contract Ballot {
     constructor(
         string memory _ballotOfficialName,
         string memory _proposal
-    ) public {
+    ) {
         ballotOfficialAddress = msg.sender;
         ballotOfficialName = _ballotOfficialName;
         proposal = _proposal;
